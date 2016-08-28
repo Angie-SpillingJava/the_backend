@@ -1,0 +1,44 @@
+Request Data & Headers
+
+Usually POST and PATCH are accompanied by data. And sometimes that data can be in one of multiple formats: plain text, JSON, XML, your own data format, a binary file, …
+
+Accessing the HTTP headers is done using the request.headers dictionary ("dictionary-like object") and the request data using the request.data string. As a convenience, if the mimetype is application/json, request.json will contain the parsed JSON.
+
+from flask import json
+
+@app.route('/messages', methods = ['POST'])
+def api_message():
+
+    if request.headers['Content-Type'] == 'text/plain':
+        return "Text Message: " + request.data
+
+    elif request.headers['Content-Type'] == 'application/json':
+        return "JSON Message: " + json.dumps(request.json)
+
+    elif request.headers['Content-Type'] == 'application/octet-stream':
+        f = open('./binary', 'wb')
+        f.write(request.data)
+                f.close()
+        return "Binary message written!"
+
+    else:
+        return "415 Unsupported Media Type ;)"
+To specify the content type with curl:
+
+curl -H "Content-type: application/json" \
+-X POST http://127.0.0.1:5000/messages -d '{"message":"Hello Data"}'
+To send a file with curl:
+
+curl -H "Content-type: application/octet-stream" \
+-X POST http://127.0.0.1:5000/messages --data-binary @message.bin
+The replies to the different content types will be:
+
+POST /messages {"message": "Hello Data"}
+Content-type: application/json
+JSON Message: {"message": "Hello Data"}
+
+POST /message <message.bin>
+Content-type: application/octet-stream
+Binary message written!
+Also note that Flask can handle files POSTed via an HTML form using request.files and curl can simulate that behavior with the -F flag.
+
